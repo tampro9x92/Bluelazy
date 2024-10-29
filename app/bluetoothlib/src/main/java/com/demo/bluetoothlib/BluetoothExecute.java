@@ -26,6 +26,7 @@ import com.demo.bluetoothlib.callback.DiscoverCallBack;
 import com.demo.bluetoothlib.model.BluetoothInfo;
 import com.demo.bluetoothlib.thread.BluetoothClassicService;
 import com.demo.bluetoothlib.thread.BluetoothClient;
+import com.demo.bluetoothlib.thread.BluetoothSever;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -179,14 +180,14 @@ public class BluetoothExecute {
                     return;
                 }
                 while (true) {
-                    Log.d(TAG, "detectBluetoothIsScan: "+ bluetoothAdapter.isDiscovering());
+                    Log.d(TAG, "detectBluetoothIsScan: " + bluetoothAdapter.isDiscovering());
                     if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
                         return;
                     }
                     if (bluetoothDetectStatus != null) {
                         boolean isDiscover = bluetoothAdapter.isDiscovering();
                         bluetoothDetectStatus.isDiscoverMode(isDiscover);
-                        if (!bluetoothAdapter.isDiscovering()){
+                        if (!bluetoothAdapter.isDiscovering()) {
                             break;
                         }
                         try {
@@ -279,10 +280,37 @@ public class BluetoothExecute {
             BluetoothClient bluetoothClient = new BluetoothClient(device, activity);
             bluetoothClient.setBluetoothDetectConnect(bluetoothDetectConnect);
             bluetoothClient.start();
-            Log.d(TAG, "createConnection:" + device.getBondState());
-            Log.i(TAG, "createConnection: Create pairing success");
+            Log.d(TAG, "createConnectionClient:" + device.getBondState());
+            Log.i(TAG, "createConnectionClient: Create pairing success");
         } else {
-            Log.e(TAG, "createConnection: Create pairing fail" + macAddress);
+            Log.e(TAG, "createConnectionClient: Create pairing fail" + macAddress);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean createConnectionSever(String macAddress, BluetoothDetectConnect bluetoothDetectConnect) {
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG, "createConnection: android.permission.BLUETOOTH_SCAN Not granted ");
+            return false;
+        }
+        stopFindBluetooth();
+        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
+
+        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+            BluetoothClient bluetoothClient = new BluetoothClient(device, activity);
+            bluetoothClient.setBluetoothDetectConnect(bluetoothDetectConnect);
+            bluetoothClient.start();
+            return true;
+        }
+        if (device.createBond()) {
+            BluetoothSever bluetoothSever = new BluetoothSever(activity, bluetoothAdapter);
+            bluetoothSever.setBluetoothDetectConnect(bluetoothDetectConnect);
+            bluetoothSever.start();
+            Log.d(TAG, "createConnectionSever:" + device.getBondState());
+            Log.i(TAG, "createConnectionSever: Create pairing success");
+        } else {
+            Log.e(TAG, "createConnectionSever: Create pairing fail" + macAddress);
             return false;
         }
         return true;
