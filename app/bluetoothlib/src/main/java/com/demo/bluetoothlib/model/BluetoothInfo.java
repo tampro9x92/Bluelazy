@@ -7,6 +7,7 @@ public class BluetoothInfo {
     private String address;
     private int type;
     private boolean connected;
+
     public BluetoothInfo(String name, String address, int type) {
         this.name = name;
         this.address = address;
@@ -59,6 +60,10 @@ public class BluetoothInfo {
         this.address = address;
     }
 
+    /**
+     * Type will depend on the BluetoothClass
+     * @return BluetoothClass
+     */
     public int getType() {
         return type;
     }

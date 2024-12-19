@@ -1,7 +1,6 @@
 package com.demo.bluetoothlib;
 
 import android.Manifest;
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
@@ -9,13 +8,9 @@ import android.bluetooth.BluetoothManager;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.util.Log;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -24,9 +19,9 @@ import com.demo.bluetoothlib.callback.BluetoothDetectConnect;
 import com.demo.bluetoothlib.callback.BluetoothDetectStatus;
 import com.demo.bluetoothlib.callback.DiscoverCallBack;
 import com.demo.bluetoothlib.model.BluetoothInfo;
-import com.demo.bluetoothlib.thread.BluetoothClassicService;
-import com.demo.bluetoothlib.thread.BluetoothClient;
-import com.demo.bluetoothlib.thread.BluetoothSever;
+import com.demo.bluetoothlib.service.BluetoothClassic;
+import com.demo.bluetoothlib.service.BluetoothClient;
+import com.demo.bluetoothlib.service.BluetoothSever;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +31,9 @@ public class BluetoothExecute {
     private static final String TAG = "BluetoothExecute";
     private final FragmentActivity activity;
     private final BluetoothAdapter bluetoothAdapter;
-    private BluetoothClassicService bluetoothClassicService;
+    private BluetoothClassic bluetoothClassic;
     private ActivityResultLauncher<Intent> requestEnableBluetooth;
-    private ActivityResultLauncher<String[]> locationPermissionRequest;
+
 
     /**
      * Initial this in onCreate
@@ -47,7 +42,6 @@ public class BluetoothExecute {
      */
     public BluetoothExecute(@NonNull FragmentActivity activity) {
         this.activity = activity;
-        registerPermission();
         BluetoothManager bluetoothManager = activity.getSystemService(BluetoothManager.class);
         bluetoothAdapter = bluetoothManager.getAdapter();
         //Detect bluetooth device support
@@ -71,76 +65,20 @@ public class BluetoothExecute {
         if (isBLEBluetoothSupport() && BLUETOOTH_STATUS == -1) {
             BLUETOOTH_STATUS = 2;
             Log.i(TAG, "BluetoothExecute: BluetoothBLE supported");
-            requestBluetoothPermission();
+//            requestBluetoothPermission();
         } else {
             //Not support any kind of type
             Log.w(TAG, "BluetoothExecute: BluetoothBLE not supported");
         }
 
         if (BLUETOOTH_STATUS == 1 || BLUETOOTH_STATUS == 2) {
-            requestBluetoothPermission();
+//            requestBluetoothPermission();
         }
         //create broadcast find bluetooth
-        bluetoothClassicService = new BluetoothClassicService();
+        bluetoothClassic = new BluetoothClassic();
     }
 
-    private void registerPermission() {
-        requestEnableBluetooth = activity.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
-            @Override
-            public void onActivityResult(ActivityResult o) {
-                if (o.getResultCode() == Activity.RESULT_OK) {
-                    Log.i(TAG, "onActivityResult: enable bluetooth success");
-                } else {
-                    Log.i(TAG, "onActivityResult: enable bluetooth fail");
-                }
-            }
-        });
-        locationPermissionRequest = activity.registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-            Boolean fineLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
-            Boolean coarseLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                Boolean bluetoothConnectGranted = result.getOrDefault(Manifest.permission.BLUETOOTH_CONNECT, false);
-                Boolean bluetoothScanGranted = result.getOrDefault(Manifest.permission.BLUETOOTH_SCAN, false);
-                Boolean bluetoothAdvertiseGranted = result.getOrDefault(Manifest.permission.BLUETOOTH_ADVERTISE, false);
-                if (Boolean.TRUE.equals(bluetoothConnectGranted)) {
-                    Log.i(TAG, String.format("requestBluetoothPermission Success: %s ", Manifest.permission.BLUETOOTH_CONNECT));
-                } else {
-                    Log.e(TAG, String.format("requestBluetoothPermission Fail: %s ", Manifest.permission.BLUETOOTH_CONNECT));
-                    return;
-                }
-                if (Boolean.TRUE.equals(bluetoothScanGranted)) {
-                    Log.i(TAG, String.format("requestBluetoothPermission Success: %s ", Manifest.permission.BLUETOOTH_SCAN));
-                } else {
-                    Log.e(TAG, String.format("requestBluetoothPermission Fail: %s ", Manifest.permission.BLUETOOTH_SCAN));
-                    return;
-                }
-                if (Boolean.TRUE.equals(bluetoothAdvertiseGranted)) {
-                    Log.i(TAG, String.format("requestBluetoothPermission Success: %s ", Manifest.permission.BLUETOOTH_ADVERTISE));
-                } else {
-                    Log.e(TAG, String.format("requestBluetoothPermission Fail: %s ", Manifest.permission.BLUETOOTH_ADVERTISE));
-                    return;
-                }
-//                startFindBluetoothSPP();
-//                BluetoothSPP();
-            }
 
-            //Request find bluetooth with physical location
-            if (Boolean.TRUE.equals(fineLocationGranted)) {
-                Log.i(TAG, String.format("requestBluetoothPermission success: %s", Manifest.permission.ACCESS_FINE_LOCATION));
-                findBluetoothWithPhysicalDevice();
-            } else {
-                Log.e(TAG, String.format("requestBluetoothPermission fail: %s", Manifest.permission.ACCESS_FINE_LOCATION));
-            }
-            if (Boolean.TRUE.equals(coarseLocationGranted)) {
-                Log.i(TAG, String.format("requestBluetoothPermission success: %s", Manifest.permission.ACCESS_COARSE_LOCATION));
-                findBluetoothWithPhysicalDevice();
-            } else {
-                Log.e(TAG, String.format("requestBluetoothPermission fail: %s", Manifest.permission.ACCESS_COARSE_LOCATION));
-            }
-
-            Log.i(TAG, "requestBluetoothPermission : request permission finish ");
-        });
-    }
 
     public void requestEnableBluetooth() {
         if (!bluetoothAdapter.isEnabled()) {
@@ -160,8 +98,8 @@ public class BluetoothExecute {
         }
         bluetoothAdapter.startDiscovery();
         IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        bluetoothClassicService.setDiscoverCallBack(discoverCallBack);
-        activity.registerReceiver(bluetoothClassicService, intentFilter);
+        bluetoothClassic.setDiscoverCallBack(discoverCallBack);
+        activity.registerReceiver(bluetoothClassic, intentFilter);
     }
 
     public void stopFindBluetooth() {
@@ -205,29 +143,18 @@ public class BluetoothExecute {
     }
 
     public void endFindBluetoothSPP() {
-        if (bluetoothClassicService == null) {
+        if (bluetoothClassic == null) {
             Log.e(TAG, "cancelFindBluetoothSPP: bluetooth finding not register");
             return;
         }
-        activity.unregisterReceiver(bluetoothClassicService);
+        activity.unregisterReceiver(bluetoothClassic);
     }
 
     public void findBluetoothWithPhysicalDevice() {
 
     }
 
-    private void requestBluetoothPermission() {
-        Log.i(TAG, "requestBluetoothPermission: Start request permission");
-        String[] permissions = new String[5];
-        permissions[0] = Manifest.permission.ACCESS_FINE_LOCATION;
-        permissions[1] = Manifest.permission.ACCESS_COARSE_LOCATION;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            permissions[2] = Manifest.permission.BLUETOOTH_CONNECT;
-            permissions[3] = Manifest.permission.BLUETOOTH_SCAN;
-            permissions[4] = Manifest.permission.BLUETOOTH_ADVERTISE;
-        }
-        locationPermissionRequest.launch(permissions);
-    }
+
 
     public List<BluetoothInfo> findBluetoothHadPaired() {
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
@@ -289,30 +216,29 @@ public class BluetoothExecute {
         return true;
     }
 
-    public boolean createConnectionSever(String macAddress, BluetoothDetectConnect bluetoothDetectConnect) {
+    public boolean createBluetoothSever() {
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "createConnection: android.permission.BLUETOOTH_SCAN Not granted ");
             return false;
         }
-        stopFindBluetooth();
-        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
+//        stopFindBluetooth();
+//        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
 
-        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
-            BluetoothClient bluetoothClient = new BluetoothClient(device, activity);
-            bluetoothClient.setBluetoothDetectConnect(bluetoothDetectConnect);
-            bluetoothClient.start();
-            return true;
-        }
-        if (device.createBond()) {
+//        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+//            BluetoothClient bluetoothClient = new BluetoothClient(device, activity);
+//            bluetoothClient.setBluetoothDetectConnect(bluetoothDetectConnect);
+//            bluetoothClient.start();
+//            return true;
+//        }
+//        if (device.createBond()) {
             BluetoothSever bluetoothSever = new BluetoothSever(activity, bluetoothAdapter);
-            bluetoothSever.setBluetoothDetectConnect(bluetoothDetectConnect);
             bluetoothSever.start();
-            Log.d(TAG, "createConnectionSever:" + device.getBondState());
-            Log.i(TAG, "createConnectionSever: Create pairing success");
-        } else {
-            Log.e(TAG, "createConnectionSever: Create pairing fail" + macAddress);
-            return false;
-        }
+//            Log.d(TAG, "createConnectionSever:" + device.getBondState());
+//            Log.i(TAG, "createConnectionSever: Create pairing success");
+//        } else {
+//            Log.e(TAG, "createConnectionSever: Create pairing fail" + macAddress);
+//            return false;
+//        }
         return true;
     }
 }

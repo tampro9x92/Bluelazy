@@ -3,31 +3,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/fragmentBluetoothList">
 
-    <fragment
-        android:id="@+id/FirstFragment"
-        android:name="com.demo.bluelazy.FirstFragment"
-        android:label="@string/first_fragment_label"
-        tools:layout="@layout/fragment_first">
-
-        <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/SecondFragment"
-        android:name="com.demo.bluelazy.SecondFragment"
-        android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_second">
-
-        <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
-    </fragment>
     <fragment
         android:id="@+id/fragmentBluetoothList"
-        android:name="com.demo.bluelazy.dialog.FragmentBluetoothList"
+        android:name="com.demo.bluelazy.ui.fragment.chat.MessageItemFragment"
         android:label="fragment_bluetooth"
-        tools:layout="@layout/fragment_bluetooth" />
+        tools:layout="@layout/fragment_chat" >
+        <action
+            android:id="@+id/fbtnBluetooth"
+            app:destination="@id/dialog_bluetooth" />
+    </fragment>
+    <dialog
+        android:id="@+id/dialog_bluetooth"
+        android:name="com.demo.bluelazy.ui.dialog.bluetooth.fragment.DialogFindBluetooth"
+        tools:layout="@layout/dialog_bluetooth"/>
 </navigation>
